@@ -727,6 +727,28 @@ RawFloatingCursorPoint _toTextPoint(FloatingCursorDragState state, Map<String, d
   return RawFloatingCursorPoint(offset: offset, state: state);
 }
 
+class TextInputHideListener {
+  var _handlers = List<VoidCallback>();
+
+  TextInputHideListener._();
+
+  static final instance = TextInputHideListener._();
+
+  void addHandler(VoidCallback handler) {
+    _handlers.add(handler);
+  }
+
+  void removeHandler(VoidCallback handler) {
+    _handlers.remove(handler);
+  }
+
+  void dispatchEvent() {
+    for (var handler in List<VoidCallback>.from(_handlers)) {
+      handler();
+    }
+  }
+}
+
 class _TextInputClientHandler {
   _TextInputClientHandler() {
     SystemChannels.textInput.setMethodCallHandler(_handleTextInputInvocation);
@@ -770,8 +792,10 @@ class _TextInputClientHandler {
     // nothing.
     scheduleMicrotask(() {
       _hidePending = false;
-      if (_currentConnection == null)
+      if (_currentConnection == null) {
         SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+        TextInputHideListener.instance.dispatchEvent();
+      }
     });
   }
 }
